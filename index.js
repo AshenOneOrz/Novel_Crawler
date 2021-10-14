@@ -1,18 +1,15 @@
+const { log, readFile, writeFile, replaceAll } = require('./lib/utils')
 
-const {
-    log,
-    readFile,
-    writeFile,
-    replaceAll,
-} = require('./lib/utils')
+// const request = require('sync-request')
+// const request = require('request')
+// const Agent = require('socks5-http-client/lib/Agent')
 
-const request = require('sync-request')
+const axios = require('axios')
 
 const parseHtml = (html) => {
     let lines = html.split('\n')
 
     for (let i = 1; i < lines.length - 1; i++) {
-
         let line = lines[i]
         let prevLine = lines[i - 1]
         let nextLine = lines[i + 1]
@@ -33,17 +30,29 @@ const parseHtml = (html) => {
 const getPages = (contents, baseUrl) => {
     for (const content of contents) {
         let url = baseUrl + content.path
-        // url = "https://www.baidu.com/"
-        // url = 'https://www.npmjs.com/package/sync-request'
-        log(`开始请求，地址是\r\n${url}`)
-        let response = request('GET', url)
-        if (response.statusCode < 300) {
-            let body = response.getBody().toString()
-            writeFile('a.html', body)
+        url = 'https://www.baidu.com/'
+
+        let proxy = {
+            host: '127.0.0.1',
+            port: 7890,
         }
+
+        axios({
+            method: 'get',
+            url,
+            proxy: proxy,
+        })
+            .then(function (response) {
+                log('------------Success')
+            })
+            .catch(function (error) {
+                log('------------Error')
+                log(error)
+                log('------------Error')
+            })
+
         break
     }
-
 }
 
 const parseContents = (url) => {
@@ -53,11 +62,10 @@ const parseContents = (url) => {
 
     for (const line of lines) {
         if (line.startsWith('<li>')) {
-
             let s1 = line.indexOf('href="') + 6
             let e1 = line.indexOf('html">') + 4
             let path = line.slice(s1, e1)
-            
+
             let s2 = line.indexOf('html">') + 6
             let e2 = line.indexOf('</a></li>')
             let title = line.slice(s2, e2)
