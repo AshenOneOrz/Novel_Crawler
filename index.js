@@ -1,11 +1,9 @@
-/**
- * 1. 下载所有章节的 html 到本地
- */
 
 const {
     log,
     readFile,
     writeFile,
+    replaceAll,
 } = require('./lib/utils')
 
 const request = require('sync-request')
@@ -22,12 +20,8 @@ const parseHtml = (html) => {
         if (prevLine.startsWith('<br>') && nextLine.startsWith('</div>')) {
             let data = line
 
-            while (data.indexOf('<br />') !== -1) {
-                data = line.replace('<br />', '\r\n')
-            }
-            while (data.indexOf('&nbsp;') !== -1) {
-                data = data.replace('&nbsp;', ' ')
-            }
+            replaceAll(data, '<br />', '\r\n')
+            replaceAll(data, '&nbsp;', ' ')
 
             return data
         }
@@ -39,8 +33,15 @@ const parseHtml = (html) => {
 const getPages = (contents, baseUrl) => {
     for (const content of contents) {
         let url = baseUrl + content.path
-        log(url, content.title)
-        
+        // url = "https://www.baidu.com/"
+        // url = 'https://www.npmjs.com/package/sync-request'
+        log(`开始请求，地址是\r\n${url}`)
+        let response = request('GET', url)
+        if (response.statusCode < 300) {
+            let body = response.getBody().toString()
+            writeFile('a.html', body)
+        }
+        break
     }
 
 }

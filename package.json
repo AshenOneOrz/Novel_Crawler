@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "sync-request": "^6.1.0"
-  }
+    "scripts": {
+        "r": "node index.js"
+    },
+    "dependencies": {
+        "sync-request": "^6.1.0"
+    }
 }
