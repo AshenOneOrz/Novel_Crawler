@@ -4,9 +4,7 @@
     },
     "dependencies": {
         "axios": "^0.23.0",
-        "request": "^2.88.2",
-        "socks5-http-client": "^1.0.4",
-        "socks5-https-client": "^1.2.1",
-        "sync-request": "^6.1.0"
+        "https-proxy-agent": "^5.0.0",
+        "iconv-lite": "^0.6.3"
     }
 }
