@@ -9,6 +9,7 @@ const HttpsProxyAgent = require('https-proxy-agent')
 const iconvLite = require('iconv-lite')
 
 const httpsAgent = new HttpsProxyAgent(`http://127.0.0.1:7890`)
+
 const axios = Axios.create({
     proxy: false,
     httpsAgent,
@@ -30,7 +31,7 @@ const parseHtml = (html) => {
     }
 }
 
-const WriteChaptersToFile = (contents) => {
+const WriteChaptersToFile = (contents, novelName) => {
     log('下载完毕，开始写入')
     for (let i = 0; i < contents.length; i++) {
         const c = contents[i]
@@ -39,7 +40,7 @@ const WriteChaptersToFile = (contents) => {
         let file = readFile(path)
         let title = `${c.title}\r\n\r\n`
         let data = title + parseHtml(file)
-        appendFile('芝加哥1990.txt', data)
+        appendFile(novelName, data)
     }
 }
 
@@ -64,9 +65,8 @@ const downloadPages = async (contents, baseUrl) => {
 
     if (cs.length !== 0) {
         downloadPages(cs, baseUrl)
-    } else {
-        WriteChaptersToFile(contents)
     }
+
 }
 
 const parseContents = (url) => {
@@ -100,11 +100,16 @@ const __main = () => {
     // 传入目录页 url，返回所有章节的 path 和 title
     // let url = `https://www.ptwxz.com/html/10/10125/`
     let url = './cache/mulu.html'
+    // 解析目录
     let contents = parseContents(url)
 
+    // 下载所有章节的页面
     let baseUrl = `https://www.ptwxz.com/html/10/10125/`
-    let pages = downloadPages(contents, baseUrl)
+    downloadPages(contents, baseUrl)
 
+    // 写入文件
+    let novelName = '芝加哥1990.txt'
+    WriteChaptersToFile(contents, novelName)
 }
 
 __main()
