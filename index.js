@@ -1,19 +1,4 @@
-const { log, readFile, writeFile, appendFile, replaceAll } = require('./lib/utils')
-
-// const request = require('sync-request')
-// const request = require('request')
-// const Agent = require('socks5-http-client/lib/Agent')
-
-const Axios = require('axios')
-const HttpsProxyAgent = require('https-proxy-agent')
-const iconvLite = require('iconv-lite')
-
-const httpsAgent = new HttpsProxyAgent(`http://127.0.0.1:7890`)
-
-const axios = Axios.create({
-    proxy: false,
-    httpsAgent,
-})
+const { log, readFile, writeFile, appendFile, replaceAll, downloadPage } = require('./lib/utils')
 
 const parseHtml = (html) => {
     let lines = html.split('\n')
@@ -32,34 +17,28 @@ const parseHtml = (html) => {
 }
 
 const WriteChaptersToFile = (contents, novelName) => {
-    log('下载完毕，开始写入')
     for (let i = 0; i < contents.length; i++) {
         const c = contents[i]
         let path = `./cache/${c.path}`
-
         let file = readFile(path)
         let title = `${c.title}\r\n\r\n`
         let data = title + parseHtml(file)
+
         appendFile(novelName, data)
     }
 }
 
-// contents 是[{title: '第一章', path: '1.html'}, ...] 格式的目录
-// baseUrl 是 https://xiaoshuo.com/name/ 格式的 url， 用这个 url 和每个章节的 path 进行拼接即可得出完整的 url
 const downloadPages = async (contents, baseUrl) => {
     let cs = JSON.parse(JSON.stringify(contents))
-    log('开始下载 html 文件')
     for (const content of contents) {
         let url = baseUrl + content.path
         try {
-            let response = await axios.get(url, {
-                responseType: 'arraybuffer',
-            })
-            let data = iconvLite.decode(response.data, 'gbk').toString()
-            writeFile(`./cache/${content.path.split('.')[0]}.html`, data)
+            let path = `./cache/${content.path.split('.')[0]}.html`
+            await downloadPage(url, path)
             cs.shift()
         } catch (error) {
-            log('error', content)
+            log('下载失败', error)
+            return
         }
     }
 
@@ -69,11 +48,11 @@ const downloadPages = async (contents, baseUrl) => {
 
 }
 
-const parseContents = (url) => {
-    let html = readFile(url)
+const parseContents = () => {
+    let path = './cache/contents.html'
+    let html = readFile(path)
     let lines = html.split('\n')
     let contents = []
-    log('开始解析目录')
     for (const line of lines) {
         if (line.startsWith('<li>')) {
             let s1 = line.indexOf('href="') + 6
@@ -96,20 +75,25 @@ const parseContents = (url) => {
     return contents
 }
 
-const __main = () => {
-    // 传入目录页 url，返回所有章节的 path 和 title
-    // let url = `https://www.ptwxz.com/html/10/10125/`
-    let url = './cache/mulu.html'
-    // 解析目录
-    let contents = parseContents(url)
+const downloadContentsPage = async (url) => {
+    let path = './cache/contents.html'
+    await downloadPage(url, path)
+}
 
-    // 下载所有章节的页面
-    let baseUrl = `https://www.ptwxz.com/html/10/10125/`
-    downloadPages(contents, baseUrl)
+const __main = async () => {
 
-    // 写入文件
+    let url = `https://www.ptwxz.com/html/10/10125/`
     let novelName = '芝加哥1990.txt'
+
+    log('开始下载目录页')
+    await downloadContentsPage(url)
+    log('开始解析目录')
+    let contents = parseContents()
+    log('开始下载所有章节的 html 文件')
+    await downloadPages(contents, url)
+    log('下载完毕，开始写入')
     WriteChaptersToFile(contents, novelName)
+    log('写入完毕')
 }
 
 __main()
